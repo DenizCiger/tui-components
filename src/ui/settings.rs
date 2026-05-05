@@ -28,6 +28,24 @@ pub struct SettingsModal<'a> {
     pub key_width: usize,
 }
 
+impl From<crate::shortcuts::ShortcutDisplay> for SettingsItemView {
+    fn from(value: crate::shortcuts::ShortcutDisplay) -> Self {
+        Self {
+            keys: value.keys.to_owned(),
+            action: value.action.to_owned(),
+        }
+    }
+}
+
+impl From<crate::shortcuts::ShortcutSection> for SettingsSectionView {
+    fn from(value: crate::shortcuts::ShortcutSection) -> Self {
+        Self {
+            title: value.title.to_owned(),
+            items: value.items.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
 impl<'a> SettingsModal<'a> {
     pub fn new(title: &'a str, sections: Vec<SettingsSectionView>) -> Self {
         Self {
@@ -38,6 +56,13 @@ impl<'a> SettingsModal<'a> {
             height_percent: 80,
             key_width: 16,
         }
+    }
+
+    pub fn from_shortcuts(
+        title: &'a str,
+        sections: Vec<crate::shortcuts::ShortcutSection>,
+    ) -> Self {
+        Self::new(title, sections.into_iter().map(Into::into).collect())
     }
 
     pub fn render(&self, frame: &mut Frame, outer: Rect, theme: Theme) {
