@@ -1,5 +1,6 @@
 pub mod json;
 pub mod secret;
+pub mod session;
 pub mod time;
 
 use directories::BaseDirs;
