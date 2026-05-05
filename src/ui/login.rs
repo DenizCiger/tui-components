@@ -1,9 +1,9 @@
 use crate::ui::layout::centered_rect_fixed;
 use crate::ui::theme::Theme;
-use ratatui::layout::{Constraint, Direction, Layout, Rect};
-use ratatui::style::{Modifier, Style};
-use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
+use ratatui::layout::{ Constraint, Direction, Layout, Rect };
+use ratatui::style::{ Modifier, Style };
+use ratatui::text::{ Line, Span };
+use ratatui::widgets::{ Block, Borders, Paragraph, Wrap };
 use ratatui::Frame;
 
 #[derive(Debug, Clone)]
@@ -53,20 +53,22 @@ impl<'a> LoginModal<'a> {
 
     pub fn render(&self, frame: &mut Frame, area: Rect, theme: Theme) {
         let footer_text_line_count = self.footer.lines().count().max(1) as u16;
-        let footer_line_count = footer_text_line_count
-            + u16::from(self.saved_account.is_some())
-            + u16::from(self.error.is_some())
-            + u16::from(self.warning.is_some());
+        let footer_line_count =
+            footer_text_line_count +
+            u16::from(self.saved_account.is_some()) +
+            u16::from(self.error.is_some()) +
+            u16::from(self.warning.is_some());
         let help_line_count = if self.help_lines.is_empty() {
             0
         } else {
-            self.help_lines.len() as u16 + 1
+            (self.help_lines.len() as u16) + 1
         };
-        let dynamic_height = 4
-            + help_line_count
-            + self.fields.len().saturating_mul(2) as u16
-            + 2
-            + footer_line_count;
+        let dynamic_height =
+            4 +
+            help_line_count +
+            (self.fields.len().saturating_mul(2) as u16) +
+            2 +
+            footer_line_count;
         let height = self.min_height.max(dynamic_height).min(area.height);
         let width = self.width.min(area.width);
         let area = centered_rect_fixed(width, height, area);
@@ -92,10 +94,13 @@ impl<'a> LoginModal<'a> {
             .constraints(constraints)
             .split(inner);
 
-        let help = self
-            .help_lines
+        let help = self.help_lines
             .iter()
-            .map(|line| Line::from(Span::styled((*line).to_owned(), Style::default().fg(theme.neutral_gray))))
+            .map(|line|
+                Line::from(
+                    Span::styled((*line).to_owned(), Style::default().fg(theme.neutral_gray))
+                )
+            )
             .chain(std::iter::once(Line::from("")))
             .collect::<Vec<_>>();
         frame.render_widget(Paragraph::new(help).wrap(Wrap { trim: false }), chunks[0]);
@@ -111,26 +116,39 @@ impl<'a> LoginModal<'a> {
         };
         let submit_text = if self.busy { self.busy_label } else { self.submit_label };
         frame.render_widget(
-            Paragraph::new(Line::from(Span::styled(format!("  [ {submit_text} ]  "), submit_style))),
-            chunks[self.fields.len() + 1],
+            Paragraph::new(
+                Line::from(Span::styled(format!("  [ {submit_text} ]  "), submit_style))
+            ),
+            chunks[self.fields.len() + 1]
         );
 
         let mut footer_lines = Vec::new();
         if let Some(error) = self.error {
-            footer_lines.push(Line::from(Span::styled(format!("Error: {error}"), Style::default().fg(theme.error))));
+            footer_lines.push(
+                Line::from(
+                    Span::styled(format!("Error: {error}"), Style::default().fg(theme.error))
+                )
+            );
         }
         if let Some(warning) = self.warning {
-            footer_lines.push(Line::from(Span::styled(warning.to_owned(), Style::default().fg(theme.warning))));
+            footer_lines.push(
+                Line::from(Span::styled(warning.to_owned(), Style::default().fg(theme.warning)))
+            );
         }
         if let Some(saved) = &self.saved_account {
-            footer_lines.push(Line::from(vec![
-                Span::styled("Saved account: ", Style::default().fg(theme.brand)),
-                Span::raw(saved.clone()),
-                Span::raw(" | Ctrl+L login"),
-            ]));
+            footer_lines.push(
+                Line::from(
+                    vec![
+                        Span::styled("Saved account: ", Style::default().fg(theme.brand)),
+                        Span::raw(saved.clone())
+                    ]
+                )
+            );
         }
         for line in self.footer.lines() {
-            footer_lines.push(Line::from(Span::styled(line.to_owned(), Style::default().fg(theme.neutral_gray))));
+            footer_lines.push(
+                Line::from(Span::styled(line.to_owned(), Style::default().fg(theme.neutral_gray)))
+            );
         }
         frame.render_widget(Paragraph::new(footer_lines), chunks[self.fields.len() + 2]);
     }
@@ -153,9 +171,11 @@ fn render_field(field: &LoginFieldView<'_>, theme: Theme) -> Line<'static> {
         Style::default().fg(theme.neutral_white)
     };
     let prefix = if field.focused { "▌ " } else { "  " };
-    Line::from(vec![
-        Span::styled(prefix, Style::default().fg(theme.brand)),
-        Span::styled(format!("{:<12}", field.label), label_style),
-        Span::styled(rendered, value_style),
-    ])
+    Line::from(
+        vec![
+            Span::styled(prefix, Style::default().fg(theme.brand)),
+            Span::styled(format!("{:<12}", field.label), label_style),
+            Span::styled(rendered, value_style)
+        ]
+    )
 }
