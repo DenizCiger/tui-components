@@ -1,4 +1,3 @@
-use crate::shortcuts::ShortcutSection;
 use crate::ui::layout::centered_rect_fixed;
 use crate::ui::theme::Theme;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
@@ -8,9 +7,21 @@ use ratatui::widgets::{Block, Borders, Clear, Paragraph};
 use ratatui::Frame;
 
 #[derive(Debug, Clone)]
+pub struct SettingsItemView {
+    pub keys: String,
+    pub action: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct SettingsSectionView {
+    pub title: String,
+    pub items: Vec<SettingsItemView>,
+}
+
+#[derive(Debug, Clone)]
 pub struct SettingsModal<'a> {
     pub title: &'a str,
-    pub sections: Vec<ShortcutSection>,
+    pub sections: Vec<SettingsSectionView>,
     pub scroll: u16,
     pub width_percent: u16,
     pub height_percent: u16,
@@ -18,7 +29,7 @@ pub struct SettingsModal<'a> {
 }
 
 impl<'a> SettingsModal<'a> {
-    pub fn new(title: &'a str, sections: Vec<ShortcutSection>) -> Self {
+    pub fn new(title: &'a str, sections: Vec<SettingsSectionView>) -> Self {
         Self {
             title,
             sections,
@@ -72,7 +83,7 @@ impl<'a> SettingsModal<'a> {
         let mut lines = Vec::new();
         for section in &self.sections {
             lines.push(Line::from(Span::styled(
-                section.title.to_owned(),
+                section.title.clone(),
                 Style::default().fg(theme.brand).add_modifier(Modifier::BOLD),
             )));
             for item in &section.items {
@@ -81,7 +92,7 @@ impl<'a> SettingsModal<'a> {
                         format!("  {:<width$}", item.keys, width = self.key_width),
                         Style::default().fg(theme.warning),
                     ),
-                    Span::raw(item.action.to_owned()),
+                    Span::raw(item.action.clone()),
                 ]));
             }
             lines.push(Line::from(""));
