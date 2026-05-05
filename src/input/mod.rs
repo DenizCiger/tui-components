@@ -1,4 +1,7 @@
 pub mod login;
+pub mod search;
+
+pub use search::{SearchKeyOutcome, SearchMode, SearchModalState};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
