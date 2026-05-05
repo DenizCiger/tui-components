@@ -55,6 +55,22 @@ impl TextInputState {
         self.value.replace_range(byte_idx..next_byte_idx, "");
     }
 
+    pub fn backspace_word(&mut self) {
+        while self.cursor > 0 && self.char_before_cursor().is_some_and(|c| c.is_whitespace()) {
+            self.backspace();
+        }
+        while self.cursor > 0 && self.char_before_cursor().is_some_and(|c| !c.is_whitespace()) {
+            self.backspace();
+        }
+    }
+
+    fn char_before_cursor(&self) -> Option<char> {
+        if self.cursor == 0 {
+            return None;
+        }
+        self.value.chars().nth(self.cursor - 1)
+    }
+
     pub fn delete(&mut self) {
         if self.cursor >= self.value.chars().count() {
             return;
@@ -99,6 +115,12 @@ impl TextInputState {
             KeyCode::Right => self.move_right(),
             KeyCode::Home => self.move_home(),
             KeyCode::End => self.move_end(),
+            KeyCode::Backspace
+                if key.modifiers.contains(KeyModifiers::ALT)
+                    || key.modifiers.contains(KeyModifiers::CONTROL) =>
+            {
+                self.backspace_word()
+            }
             KeyCode::Backspace => self.backspace(),
             KeyCode::Delete => self.delete(),
             KeyCode::Char(ch)
@@ -124,6 +146,38 @@ impl TextInputState {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn backspace_word_deletes_previous_word() {
+        let mut input = TextInputState::from("hello world foo");
+        input.backspace_word();
+        assert_eq!(input.value, "hello world ");
+        input.backspace_word();
+        assert_eq!(input.value, "hello ");
+        input.backspace_word();
+        assert_eq!(input.value, "");
+        input.backspace_word();
+        assert_eq!(input.value, "");
+    }
+
+    #[test]
+    fn backspace_word_handles_mid_cursor_and_unicode() {
+        let mut input = TextInputState::from("foo bär baz");
+        input.move_left();
+        input.move_left();
+        input.move_left();
+        input.move_left();
+        input.backspace_word();
+        assert_eq!(input.value, "foo  baz");
+    }
+
+    #[test]
+    fn handle_key_alt_backspace_invokes_word_delete() {
+        let mut input = TextInputState::from("one two");
+        let key = KeyEvent::new(KeyCode::Backspace, KeyModifiers::ALT);
+        assert!(input.handle_key(key));
+        assert_eq!(input.value, "one ");
+    }
 
     #[test]
     fn edits_unicode_safely() {
