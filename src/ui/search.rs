@@ -8,15 +8,18 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Clear, Paragraph};
 
 /// Build spans for `text` where `highlight` (sorted unique char indices) is
-/// rendered in brand-bold. Use to surface which characters of a candidate
-/// were matched by the search algorithm.
-pub fn highlight_spans(text: &str, highlight: &[usize], theme: Theme) -> Vec<Span<'static>> {
+/// rendered with `highlight_style` and the rest carries `base_style`. Use to
+/// surface which characters of a candidate were matched by the search
+/// algorithm.
+pub fn highlight_spans(
+    text: &str,
+    highlight: &[usize],
+    base_style: Style,
+    highlight_style: Style,
+) -> Vec<Span<'static>> {
     if highlight.is_empty() {
-        return vec![Span::raw(text.to_owned())];
+        return vec![Span::styled(text.to_owned(), base_style)];
     }
-    let highlight_style = Style::default()
-        .fg(theme.brand)
-        .add_modifier(Modifier::BOLD);
     let mut spans: Vec<Span<'static>> = Vec::new();
     let mut buf = String::new();
     let mut buf_is_highlight = false;
@@ -27,21 +30,15 @@ pub fn highlight_spans(text: &str, highlight: &[usize], theme: Theme) -> Vec<Spa
             hi_iter.next();
         }
         if !buf.is_empty() && is_hi != buf_is_highlight {
-            spans.push(if buf_is_highlight {
-                Span::styled(std::mem::take(&mut buf), highlight_style)
-            } else {
-                Span::raw(std::mem::take(&mut buf))
-            });
+            let style = if buf_is_highlight { highlight_style } else { base_style };
+            spans.push(Span::styled(std::mem::take(&mut buf), style));
         }
         buf.push(ch);
         buf_is_highlight = is_hi;
     }
     if !buf.is_empty() {
-        spans.push(if buf_is_highlight {
-            Span::styled(buf, highlight_style)
-        } else {
-            Span::raw(buf)
-        });
+        let style = if buf_is_highlight { highlight_style } else { base_style };
+        spans.push(Span::styled(buf, style));
     }
     spans
 }
@@ -144,32 +141,32 @@ mod tests {
     use super::*;
     use ratatui::style::Color;
 
-    fn theme() -> Theme {
-        Theme::default()
+    fn hi_style() -> Style {
+        Style::default().fg(Color::Indexed(220)).add_modifier(Modifier::BOLD)
     }
 
     #[test]
-    fn highlight_empty_indices_returns_single_raw_span() {
-        let spans = highlight_spans("hello", &[], theme());
+    fn highlight_empty_indices_returns_single_base_span() {
+        let spans = highlight_spans("hello", &[], Style::default(), hi_style());
         assert_eq!(spans.len(), 1);
         assert_eq!(spans[0].content, "hello");
     }
 
     #[test]
     fn highlight_groups_adjacent_indices() {
-        let spans = highlight_spans("Mathematics", &[0, 1, 4], theme());
+        let spans = highlight_spans("Mathematics", &[0, 1, 4], Style::default(), hi_style());
         assert_eq!(
             spans.iter().map(|s| s.content.as_ref()).collect::<Vec<_>>(),
             vec!["Ma", "th", "e", "matics"]
         );
-        assert!(spans[0].style.fg == Some(Color::Indexed(39)));
-        assert!(spans[1].style.fg.is_none());
-        assert!(spans[2].style.fg == Some(Color::Indexed(39)));
+        assert_eq!(spans[0].style.fg, Some(Color::Indexed(220)));
+        assert_eq!(spans[1].style.fg, None);
+        assert_eq!(spans[2].style.fg, Some(Color::Indexed(220)));
     }
 
     #[test]
     fn highlight_handles_unicode_char_indices() {
-        let spans = highlight_spans("aäb", &[1], theme());
+        let spans = highlight_spans("aäb", &[1], Style::default(), hi_style());
         assert_eq!(
             spans.iter().map(|s| s.content.as_ref()).collect::<Vec<_>>(),
             vec!["a", "ä", "b"]
