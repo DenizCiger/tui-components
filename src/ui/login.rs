@@ -52,7 +52,8 @@ impl<'a> LoginModal<'a> {
     }
 
     pub fn render(&self, frame: &mut Frame, area: Rect, theme: Theme) {
-        let footer_line_count = 1
+        let footer_text_line_count = self.footer.lines().count().max(1) as u16;
+        let footer_line_count = footer_text_line_count
             + u16::from(self.saved_account.is_some())
             + u16::from(self.error.is_some())
             + u16::from(self.warning.is_some());
@@ -128,8 +129,10 @@ impl<'a> LoginModal<'a> {
                 Span::raw(" | Ctrl+L login"),
             ]));
         }
-        footer_lines.push(Line::from(Span::styled(self.footer.to_owned(), Style::default().fg(theme.neutral_gray))));
-        frame.render_widget(Paragraph::new(footer_lines).wrap(Wrap { trim: false }), chunks[self.fields.len() + 2]);
+        for line in self.footer.lines() {
+            footer_lines.push(Line::from(Span::styled(line.to_owned(), Style::default().fg(theme.neutral_gray))));
+        }
+        frame.render_widget(Paragraph::new(footer_lines), chunks[self.fields.len() + 2]);
     }
 }
 
