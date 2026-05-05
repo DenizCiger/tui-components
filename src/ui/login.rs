@@ -52,13 +52,20 @@ impl<'a> LoginModal<'a> {
     }
 
     pub fn render(&self, frame: &mut Frame, area: Rect, theme: Theme) {
-        let dynamic_height = 4
-            + self.help_lines.len() as u16
-            + self.fields.len().saturating_mul(2) as u16
+        let footer_line_count = 1
             + u16::from(self.saved_account.is_some())
             + u16::from(self.error.is_some())
-            + u16::from(self.warning.is_some())
-            + 3;
+            + u16::from(self.warning.is_some());
+        let help_line_count = if self.help_lines.is_empty() {
+            0
+        } else {
+            self.help_lines.len() as u16 + 1
+        };
+        let dynamic_height = 4
+            + help_line_count
+            + self.fields.len().saturating_mul(2) as u16
+            + 2
+            + footer_line_count;
         let height = self.min_height.max(dynamic_height).min(area.height);
         let width = self.width.min(area.width);
         let area = centered_rect_fixed(width, height, area);
@@ -71,12 +78,12 @@ impl<'a> LoginModal<'a> {
         let inner = block.inner(area);
 
         let mut constraints = Vec::new();
-        constraints.push(Constraint::Length(self.help_lines.len() as u16 + 1));
+        constraints.push(Constraint::Length(help_line_count));
         for _ in &self.fields {
             constraints.push(Constraint::Length(2));
         }
         constraints.push(Constraint::Length(2));
-        constraints.push(Constraint::Min(1));
+        constraints.push(Constraint::Length(footer_line_count));
 
         let chunks = Layout::default()
             .direction(Direction::Vertical)
